@@ -189,6 +189,31 @@
   white-space: nowrap;
 }
 
+.mst-table tfoot .purchase-totals td {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: color-mix(in srgb, #c9a227 18%, var(--color-bg-surface));
+  border-top: 2px solid color-mix(in srgb, #c9a227 55%, transparent);
+  border-bottom: none;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.mst-table tfoot .purchase-total-label {
+  text-align: right;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.mst-table tfoot .purchase-total {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #1e3a5f;
+  background: color-mix(in srgb, #c9a227 32%, var(--color-bg-surface));
+}
+
 .mst-btn {
   display: inline-flex;
   align-items: center;

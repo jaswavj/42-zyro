@@ -12,6 +12,7 @@ interface ModuleSidebarShellProps {
   onCloseMobile: () => void;
   children: React.ReactNode;
   className?: string;
+  showHome?: boolean;
 }
 
 const ModuleSidebarShell: React.FC<ModuleSidebarShellProps> = ({
@@ -21,10 +22,11 @@ const ModuleSidebarShell: React.FC<ModuleSidebarShellProps> = ({
   onCloseMobile,
   children,
   className = '',
+  showHome = false,
 }) => {
   const location = useLocation();
   const homePath = routerPathNames.dashboard;
-  const isHome = location.pathname === homePath;
+  const isHome = location.pathname === homePath || location.pathname === routerPathNames.statistics.dashboard;
 
   return (
     <>
@@ -42,21 +44,23 @@ const ModuleSidebarShell: React.FC<ModuleSidebarShellProps> = ({
               <h2 className="sidebar-header-title">{title}</h2>
             </div>
             <div className="sidebar-nav">
-              <ul className="sidebar-menu">
-                <li className="menu-item">
-                  <Link
-                    to={homePath}
-                    className={`menu-item-button ${isHome ? 'active' : ''}`}
-                    onClick={onCloseMobile}
-                    title={collapsed ? 'Home' : undefined}
-                  >
-                    <span className="menu-item-icon">
-                      <FontAwesomeIcon icon={faHouse} />
-                    </span>
-                    <span className="menu-item-text">Home</span>
-                  </Link>
-                </li>
-              </ul>
+              {showHome && (
+                <ul className="sidebar-menu">
+                  <li className="menu-item">
+                    <Link
+                      to={homePath}
+                      className={`menu-item-button ${isHome ? 'active' : ''}`}
+                      onClick={onCloseMobile}
+                      title={collapsed ? 'Home' : undefined}
+                    >
+                      <span className="menu-item-icon">
+                        <FontAwesomeIcon icon={faHouse} />
+                      </span>
+                      <span className="menu-item-text">Home</span>
+                    </Link>
+                  </li>
+                </ul>
+              )}
               {children}
             </div>
           </div>

@@ -167,6 +167,41 @@
   height: 36px;
 }
 
+.pos-purchase-confirm-modal {
+  width: min(780px, 100%);
+}
+
+.pos-purchase-confirm-modal .pos-save-section-label {
+  display: block;
+}
+
+.pos-purchase-invoice-row {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(150px, 0.85fr);
+}
+
+.pos-purchase-pay-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pos-purchase-confirm-modal .pos-save-due-chip {
+  flex: 1 1 calc(16.666% - 6px);
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .pos-purchase-invoice-row,
+  .pos-purchase-pay-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .pos-purchase-invoice-row,
+  .pos-purchase-pay-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .pos-banner {
   margin-top: 6px;
   padding: 5px 12px;
@@ -625,6 +660,11 @@
   border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg-page));
   color: var(--color-primary);
+}
+
+.pos-lbl .req,
+.mst-fg .req {
+  color: #c53030;
 }
 
 .pos-lbl-warn {

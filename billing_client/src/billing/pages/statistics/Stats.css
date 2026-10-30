@@ -240,11 +240,10 @@
   min-width: 0;
 }
 
-.st-chart-scroll {
+.st-chart-fit {
   width: 100%;
   min-width: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
 }
 
 .st-pie-wrap {

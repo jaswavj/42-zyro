@@ -45,7 +45,7 @@ export const moduleIdForPath = (pathname: string): number | null => {
   if (pathname.includes('/app/inventory')) return MENU_MODULE.inventory;
   if (pathname.includes('/app/account-reports')) return MENU_MODULE.accountReports;
   if (pathname.includes('/app/admin')) return MENU_MODULE.admin;
-  if (pathname.includes('/app/statistics')) return MENU_MODULE.statistics;
+  if (pathname.includes('/app/dashboard') || pathname.includes('/app/statistics')) return MENU_MODULE.statistics;
   if (pathname.includes('/app/credit')) return MENU_MODULE.credit;
   if (pathname.includes('/app/expense')) return MENU_MODULE.expense;
   return null;

@@ -256,18 +256,25 @@ const PurchasePage: React.FC = () => {
     return lines.reduce(
       (acc, line) => {
         const c = calcLine(line);
+        acc.qty += n(line.qty);
         acc.cost += c.costTotal;
         acc.mrp += c.mrpTotal;
         acc.tax += c.taxAmt;
         acc.net += c.netTotal;
         return acc;
       },
-      { cost: 0, mrp: 0, tax: 0, net: 0 }
+      { qty: 0, cost: 0, mrp: 0, tax: 0, net: 0 }
     );
   }, [lines]);
 
   const grand = Math.max(0, sums.net - n(extra));
   const balance = Math.max(0, grand - n(paid));
+  const needSupplier = supplierId === '0';
+  const needInvoice = !invoiceNo.trim();
+  const needPay = payType === '0';
+  const needBank = payType !== '1' && bankId === '0';
+  const hasDue = balance > 0.001;
+  const itemCount = lines.filter((l) => n(l.qty) > 0).length;
 
   const onSupplier = (id: string) => {
     setSupplierId(id);
@@ -334,6 +341,10 @@ const PurchasePage: React.FC = () => {
 
   const openConfirm = () => {
     if (!canOpenSave()) return;
+    const cash = payTypes.find((p) => p.id === 1) || payTypes.find((p) => /cash/i.test(p.name));
+    setPayType(cash ? String(cash.id) : '1');
+    setBankId('0');
+    setPaid(money(grand));
     setConfirmOpen(true);
   };
 
@@ -532,12 +543,19 @@ const PurchasePage: React.FC = () => {
             })}
           </tbody>
           <tfoot>
-            <tr>
-              <td colSpan={9} style={{ textAlign: 'right' }}>Summary Total:</td>
-              <td className="num">{money(sums.cost)}</td>
-              <td className="num">{money(sums.mrp)}</td>
-              <td className="num">{money(sums.tax)}</td>
-              <td className="num">{money(sums.net)}</td>
+            <tr className="purchase-totals">
+              <td colSpan={2} className="purchase-total-label">Summary Total:</td>
+              <td className="num purchase-total">{money(sums.qty)}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td className="num purchase-total">{money(sums.cost)}</td>
+              <td className="num purchase-total">{money(sums.mrp)}</td>
+              <td className="num purchase-total">{money(sums.tax)}</td>
+              <td className="num purchase-total">{money(sums.net)}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -552,77 +570,135 @@ const PurchasePage: React.FC = () => {
       </div>
       {confirmOpen && (
         <div className="pos-modal-back" onClick={() => !busy && setConfirmOpen(false)}>
-          <div className="pos-modal pos-save-modal pos-purchase-add-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="pos-modal pos-save-modal pos-purchase-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pos-save-head">
               <h4>Confirm Purchase</h4>
-              <button className="pos-btn pos-btn-outline" type="button" disabled={busy} onClick={() => setConfirmOpen(false)}>
-                Close
-              </button>
+              <div className="pos-save-head-amt" title="Net payable">
+                <span>Total Amount</span>
+                <strong>₹ {money(grand)}</strong>
+              </div>
             </div>
             <div className="pos-save-body">
-            <div className="pos-row">
-              <div className="pos-fg" style={{ flex: 2, minWidth: 180 }}>
-                <span className="pos-lbl">Supplier</span>
-                <select className="pos-sel" value={supplierId} onChange={(e) => onSupplier(e.target.value)}>
-                  <option value="0">Select Supplier</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+              <p className="pos-save-section-label">Invoice</p>
+              <div className="pos-save-row pos-purchase-invoice-row">
+                <div className="pos-fg">
+                  <span className={`pos-lbl ${needSupplier ? 'pos-lbl-warn' : 'pos-lbl-em'}`}>
+                    Supplier <span className="req">*</span>
+                  </span>
+                  <select
+                    className={`pos-sel pos-sel-em ${needSupplier ? 'pos-inp-warn' : ''}`}
+                    value={supplierId}
+                    onChange={(e) => onSupplier(e.target.value)}
+                  >
+                    <option value="0">Select Supplier</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pos-fg">
+                  <span className={`pos-lbl ${needInvoice ? 'pos-lbl-warn' : 'pos-lbl-em'}`}>
+                    Invoice No. <span className="req">*</span>
+                  </span>
+                  <input
+                    className={`pos-inp pos-sel-em ${needInvoice ? 'pos-inp-warn' : ''}`}
+                    value={invoiceNo}
+                    onChange={(e) => setInvoiceNo(e.target.value)}
+                    placeholder="Required"
+                  />
+                </div>
+                <div className="pos-fg">
+                  <span className="pos-lbl pos-lbl-em">Invoice Date <span className="req">*</span></span>
+                  <input className="pos-inp pos-sel-em" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+                </div>
               </div>
-              <div className="pos-fg" style={{ flex: 1.5, minWidth: 140 }}>
-                <span className="pos-lbl">Invoice No.</span>
-                <input className="pos-inp" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} />
+
+              <p className="pos-save-section-label">Payment</p>
+              <div className="pos-save-row pos-purchase-pay-row">
+                <div className="pos-fg">
+                  <span className={`pos-lbl ${needPay ? 'pos-lbl-warn' : 'pos-lbl-em'}`}>
+                    Payment Type <span className="req">*</span>
+                  </span>
+                  <select
+                    className={`pos-sel pos-sel-em ${needPay ? 'pos-inp-warn' : ''}`}
+                    value={payType}
+                    onChange={(e) => setPayType(e.target.value)}
+                  >
+                    <option value="0">Select Payment Type</option>
+                    {payTypes.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pos-fg">
+                  <span className={`pos-lbl ${needBank ? 'pos-lbl-warn' : ''}`}>
+                    Bank / Mode {payType !== '1' ? <span className="req">*</span> : null}
+                  </span>
+                  <select
+                    className={`pos-sel ${needBank ? 'pos-inp-warn' : ''}`}
+                    value={bankId}
+                    onChange={(e) => setBankId(e.target.value)}
+                    disabled={payType === '1'}
+                  >
+                    <option value="0">Select Mode</option>
+                    {banks.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="pos-fg">
+                  <span className="pos-lbl pos-lbl-em">Paid Now</span>
+                  <input className="pos-inp pos-inp-pay" type="number" step="0.001" value={paid} onChange={(e) => setPaid(e.target.value)} />
+                </div>
+                <div className="pos-fg">
+                  <span className="pos-lbl">Extra Discount</span>
+                  <input className="pos-inp" type="number" step="0.001" value={extra} onChange={(e) => setExtra(e.target.value)} />
+                </div>
               </div>
-              <div className="pos-fg" style={{ minWidth: 150 }}>
-                <span className="pos-lbl">Invoice Date</span>
-                <input className="pos-inp" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+
+              <p className="pos-save-section-label">Totals</p>
+              <div className="pos-save-totals-bar">
+                <div className="pos-save-chip">
+                  <span>Qty</span>
+                  <strong>{money(sums.qty)}</strong>
+                </div>
+                <div className="pos-save-chip">
+                  <span>Cost Tot</span>
+                  <strong>{money(sums.cost)}</strong>
+                </div>
+                <div className="pos-save-chip">
+                  <span>MRP Tot</span>
+                  <strong>{money(sums.mrp)}</strong>
+                </div>
+                <div className="pos-save-chip">
+                  <span>Tax Tot</span>
+                  <strong>{money(sums.tax)}</strong>
+                </div>
+                <div className="pos-save-chip pos-save-chip-pay">
+                  <span>Total Amount</span>
+                  <strong>₹ {money(grand)}</strong>
+                </div>
+                <div className={`pos-save-due-chip ${hasDue ? 'has-due' : ''}`}>
+                  <span>Balance</span>
+                  <strong>₹ {money(balance)}</strong>
+                </div>
               </div>
+              {hasDue && (
+                <p className="pos-save-inline pos-save-inline-warn">Balance ₹ {money(balance)} will remain due to the supplier.</p>
+              )}
             </div>
-            <div className="pos-grid">
-              <div className="pos-fg">
-                <span className="pos-lbl">Payment Type</span>
-                <select className="pos-sel" value={payType} onChange={(e) => setPayType(e.target.value)}>
-                  <option value="0">Select Payment Type</option>
-                  {payTypes.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+            <div className="pos-save-footer">
+              <div className="pos-save-meta">
+                <span>{itemCount} item{itemCount === 1 ? '' : 's'} · Qty {money(sums.qty)}</span>
               </div>
-              <div className="pos-fg">
-                <span className="pos-lbl">Bank / Mode</span>
-                <select className="pos-sel" value={bankId} onChange={(e) => setBankId(e.target.value)} disabled={payType === '1'}>
-                  <option value="0">Select Mode</option>
-                  {banks.map((b) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
+              <div className="pos-acts pos-acts-end">
+                <button className="pos-btn pos-btn-outline" type="button" disabled={busy} onClick={() => setConfirmOpen(false)}>
+                  Close
+                </button>
+                <button className="pos-btn pos-save-primary" type="button" disabled={busy} onClick={save}>
+                  <i className="fas fa-save" /> {busy ? 'Saving…' : 'Save purchase'}
+                </button>
               </div>
-              <div className="pos-fg">
-                <span className="pos-lbl">Total Amount</span>
-                <input className="pos-inp" readOnly value={money(grand)} />
-              </div>
-              <div className="pos-fg">
-                <span className="pos-lbl">Paid Now</span>
-                <input className="pos-inp" type="number" step="0.001" value={paid} onChange={(e) => setPaid(e.target.value)} />
-              </div>
-              <div className="pos-fg">
-                <span className="pos-lbl">Extra Discount</span>
-                <input className="pos-inp" type="number" step="0.001" value={extra} onChange={(e) => setExtra(e.target.value)} />
-              </div>
-              <div className="pos-fg">
-                <span className="pos-lbl">Balance</span>
-                <input className="pos-inp" readOnly value={money(balance)} />
-              </div>
-            </div>
-            <div className="pos-acts" style={{ marginTop: 8 }}>
-              <button className="pos-btn" type="button" disabled={busy} onClick={save}>
-                <i className="fas fa-save" /> {busy ? 'SAVING...' : 'SAVE'}
-              </button>
-              <button className="pos-btn pos-btn-outline" type="button" disabled={busy} onClick={() => setConfirmOpen(false)}>
-                Cancel
-              </button>
-            </div>
             </div>
           </div>
         </div>
